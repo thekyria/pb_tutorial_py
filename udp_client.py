@@ -2,6 +2,8 @@
 
 import argparse
 import socket
+
+from pb_tutorial_py_lib import crc32
 from simple_message import simple_message_pb2, simple_message_utils
 
 DEFAULT_BUFFER_SIZE = 1024
@@ -32,18 +34,20 @@ def main(_local_port: int, _target_ip: str, _target_port: int, _buffer_size: int
         rx_tx_socket.settimeout(DEFAULT_TIMEOUT)
         rx_tx_socket.bind(('', _local_port))
 
-        message_tx = simple_message_pb2.simple_message()
-        message_tx.opcode = 11
-        message_tx.payload = "this is my payload"
-        message_tx.crc32 = 1234
-        print(f"tx ({_target_ip}:{_target_port}): {simple_message_utils.simple_message_to_str(message_tx)}")
-        rx_tx_socket.sendto(message_tx.SerializeToString(), (_target_ip, _target_port))
+        while True:
+            payload = str(input("input message payload: "))
+            message_tx = simple_message_pb2.simple_message()
+            message_tx.opcode = 11
+            message_tx.payload = payload
+            message_tx.crc32 = crc32.calculate_crc(payload)
+            print(f"tx ({_target_ip}:{_target_port}): {simple_message_utils.simple_message_to_str(message_tx)}")
+            rx_tx_socket.sendto(message_tx.SerializeToString(), (_target_ip, _target_port))
 
-        try:
-            message_rx, address = rx_tx_socket.recvfrom(_buffer_size)
-            print(f"rx ({address[0]}:{address[1]}): {message_rx.decode()}")
-        except TimeoutError:
-            print(f"Timeout ({DEFAULT_TIMEOUT} s)!")
+            try:
+                message_rx, address = rx_tx_socket.recvfrom(_buffer_size)
+                print(f"rx ({address[0]}:{address[1]}): {message_rx.decode()}")
+            except (TimeoutError, socket.timeout) as e:
+                print(f"Timeout ({DEFAULT_TIMEOUT} s)! {e}")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,12 @@
+# syntax=docker/dockerfile:1
+
+ARG CODE_VERSION=latest
+FROM thekyria/thekali:${CODE_VERSION}
+
+ENTRYPOINT ["/home/kali/udp_server.py", "-p"]
+CMD ["20212"]
+
+# Build with:
+#  docker build -f .\Dockerfile.server -t thekyria/udp_server:latest .
+# Run with:
+#  docker run -i -t --name udp_server1 --network="bridge" --rm thekyria/udp_server:latest 20212

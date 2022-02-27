@@ -18,13 +18,20 @@ RUN apt -y update && \
     protobuf-compiler && \
     apt -y autoclean && apt -y autoremove && apt -y clean
 
+RUN python -m pip install --upgrade pip setuptools wheel
+
 WORKDIR /home/kali
 
 COPY udp_client.py udp_server.py requirements.txt ./
 COPY simple_message/ simple_message/
-RUN dos2unix ./* simple_message/*
+COPY pb_tutorial_py_lib/ pb_tutorial_py_lib/
+RUN dos2unix ./* simple_message/* pb_tutorial_py_lib/*
 
-RUN python -m pip install --upgrade pip setuptools wheel
 RUN python -m pip install --upgrade -r requirements.txt
 
 RUN protoc --proto_path=. --python_out=simple_message/ simple_message/simple_message.proto
+
+# Build with:
+#  docker build -f .\Dockerfile -t thekyria/thekali:latest .
+# Run with:
+#  docker run -i -t --name kali1 --network="bridge" --rm thekyria/thekali:latest /bin/bash
