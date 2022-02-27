@@ -1,2 +1,326 @@
-# pb_tutorial_py
-Protocol Buffer: Python
+
+# Create a Dockerfile 
+
+A Dockerfile is a text document that contains all the commands a user could call on the command line to assemble an image.
+
+`Dockerfile` sytax help:
+-  The `# syntax` directive defines the location of the Dockerfile syntax that is used to build the `Dockerfile`.
+-  `ARG` sets up a variable to be passed at build-time to the builder. This can be later be used like `${CODE_VERSION}` in the `FROM` line.
+- `FROM` this is the basic container that your container is going to be based on. [Kali Linux](https://www.kali.org/blog/official-kali-linux-docker-images/) is used here as a base image just as an example.
+- `LABEL` key-value pairs of metadata for your container. Can later be inspected with `docker image inspect --format='' myimage`.
+- `SHELL` defines the default shell for the container. In linux by default it is `SHELL ["/bin/sh", "-c"]` (included in the example Dockerfile above for educational purposes).
+-  `RUN` will execute commands in a new layer on top of the current image and commit the results. The result will be used for any next step in the Dockerfile.
+-  `WORKDIR` sets the working directory fory any `RUN`, `CMD`, `ENTRYPOINT`, `COPY` and `ADD` instructions that follow it.
+
+For a complete reference of Dockerfiles see here: https://docs.docker.com/engine/reference/builder/
+
+# Build the image
+
+To create a docker image you need to build your `Dockerfile`. This is done by the Docker daemon, not by the CLI. The CLI passes the build context to the daemon with the following command.
+
+```bash
+docker build -f .\Dockerfile -t thekyria/thekali:latest .
+```
+
+Syntax help for docker build:
+- `-f` specifies the Dockerfile location. If omitted the default location it `.\Dockerfile`
+-  `-t` specifies a repository (`thekyria/thekali`) and a version (`latest`) to tag the image with
+- `.` is the context of the `docker build` command.
+
+If everything is successfull, you should be able to see your new image.
+
+```bash
+PS C:\Users\theky\work\development\docker_udp\thekali> docker images
+REPOSITORY                    TAG              IMAGE ID       CREATED          SIZE
+thekyria/thekali              latest           8b77b2f4032d   13 minutes ago   265MB
+```
+
+It is a good practice to include a `.dockerignore` file in the directory of your `Dockerfile`. Patterns matched in `.dockerignore` (in a similar fashion as for `.gitignore`) will be excluded from the build context (i.e. `.` in the above example).
+
+# Run the image 
+
+## In foreground mode 
+
+You can start the container with:
+
+```bash
+docker run -i -t --name kali1 thekyria/thekali:latest /bin/bash
+```
+
+Explanation of the docker run command:
+- `-i` flag directs STDIN of the host into the container.
+- `-t` flag gives you TTY to the docker container as if you were inside the shell of the container. The combination of `i` and `t` gives access the the prompt of the container.
+- `--name kali1` gives the name `kali1` to the container instance. This can be seen in `docker ps`. If the `--name` is not specified, a random name is generated upon `docker run` execution, e.g. `lucid_dewdney`.
+- `thekyria/thekali:latest` specify the image to run
+- `/bin/bash` specifies the command to run in the container
+
+For a complete reference on the run command see here: 
+https://docs.docker.com/engine/reference/run/
+
+This will bring you in the bash of the container.
+
+```bash
+┌──(root㉿b254622c25d6)-[/home/kali]
+└─#
+```
+
+From another cmd on the host, you can verify that the container is running with:
+
+```bash
+PS C:\Users\theky> docker ps
+CONTAINER ID   IMAGE                     COMMAND       CREATED         STATUS         PORTS     NAMES
+b254622c25d6   thekyria/thekali:latest   "/bin/bash"   3 seconds ago   Up 4 seconds             xenodochial_newton
+```
+
+## In detached (background) mode
+
+A container can be started in detached mode. 
+
+```bash
+docker run -it -d thekyria/thekali:latest /bin/bash
+```
+
+The above will start the container, launch the `/bin/bash` command in the container, and return to the prompt in the host. You can verify that an image is running with the `docker ps` command.
+
+The `-it` flag is a combination of `-i`, `-t`. It is still needed 
+
+We can attach to (the process running in the) container with:
+
+```bash
+docker attach ff506a507bbd
+```
+
+Where `ff506a507bbd`  is the `CONTAINER ID` as shown by the `docker ps` command.
+
+## Start, stop, and attach
+
+The `CONTAINER_ID` can be used to start and stop containers.
+
+```bash
+docker run -i -t -d thekyria/thekali:latest /bin/bash
+docker run -i -t -d thekyria/thekali:latest /bin/bash
+docker ps
+```
+
+The above will list two containers, based off the same image, in running state.
+
+We can stop them:
+
+```bash
+docker stop 3f8447557f1b
+docker stop f6872f405f0b
+```
+
+Now the output list of `docker ps` will be empty. We should look into `docker ps -a` for the stopped containers.
+
+We can start them again with:
+
+```bash
+docker start 3f8447557f1b
+docker start f6872f405f0b
+```
+
+Once they have been restarted, we can attach host prompts to the containers with 
+
+```bash
+docker attach 3f8447557f1b
+```
+
+And from another bash: 
+
+```bash
+docker attachf6872f405f0b
+```
+
+
+# Networking
+
+
+## Ping from container to container 
+
+Start two containers.
+
+```bash
+docker run -i -t -d --name kali1 --network="bridge" --rm thekyria/thekali:latest /bin/bash
+docker run -i -t -d --name kali2 --network="bridge" --rm thekyria/thekali:latest /bin/bash
+```
+
+The `--network="bridge"` flag creates a network stack on the default Docker bridge (this is the default behavior). Alternative options (e.g. "none", "host", etc.) are available [here](https://docs.docker.com/engine/reference/run/#network-settings).
+
+The docker pseudonetworks can be examined on the host with:
+
+```bash
+docker network ls
+```
+
+More information on the `bridge` network can be seen with:
+
+```bash
+docker network inspect bridge
+```
+
+Attach to the two containers from different prompts on the host. Check the IP addresses with `ip a`. On one of the two start `tcpdump` and on the other ping the first  with `ping <ip-address>`.
+
+For the above to work, make sure `ping` and `tcpdump` are installed on the image that you use.
+
+A similar walkthrough can be found under:
+https://docs.docker.com/network/network-tutorial-standalone/
+
+## Ping from the host to a container
+
+In Windows there is not `docker0` bridge interface and therefore linux containers cannot be pinged. See also:
+https://docs.docker.com/desktop/windows/networking/
+
+
+
+# Housekeeping 
+
+## Containers 
+
+When you start a container without the `--rm` flag it persists after exiting/stopping. List all containers in the system with:
+
+```bash
+docker ps -a
+```
+
+You can prune all stopped containers with:
+
+```bash
+docker container prune
+```
+
+
+## Images 
+
+Prune unused images with:
+
+```bash
+docker image prune
+```
+This will clean up all dangling images, i.e. not tagged and not reference by any container.
+
+A deeper cleanup is possible with:
+
+```bash
+docker image prune -a
+```
+
+# Applications in containers
+
+An application can copied over to a container through `Dockerfile` `COPY` commands and can be run from there via a combination of `ENTRYPOINT` and `CMD` commands.
+
+The sourcefiles of this example can be found in this repo. Two python sibling applications (server-client) have been created that can exchange UDP messages. The payload of the exchanged message is serialized using [Protocol Buffers](https://developers.google.com/protocol-buffers/docs/pythontutorial).
+
+## Protocol Buffers and Python
+
+A basic protocol description has been created in `simple_message.proto`.
+
+```
+syntax = "proto2";
+
+package thepb;
+
+message simple_message {
+    optional int32 opcode = 1;
+    optional string payload =2;
+    optional int32 crc32 =3;
+}
+```
+
+The corresponding `.py` file can be created by parsing the `.proto` definition with `protoc` (as seen in `Dockerfile:32`):
+
+```bash
+protoc --proto_path=. --python_out=simple_message/ simple_message/simple_message.proto
+```
+
+The output `simple_message_pb2.py` is imported and used where needed. Example excerpt from `udc_client.py`.
+
+```python
+...
+from simple_message import simple_message_pb2
+...
+message_tx = simple_message_pb2.simple_message()
+message_tx.opcode = 11
+message_tx.payload = payload
+message_tx.crc32 = crc32.calculate_crc(payload)
+...
+rx_tx_socket.sendto(message_tx.SerializeToString(), (_target_ip, _target_port))
+...
+```
+
+Two new `Dockerfiles` are generated:
+- `Dockerfile.server` corresponding to the "server" application of the example, and
+- `Dockerfile.client` corresponding to the client.
+
+```dockerfile
+# syntax=docker/dockerfile:1
+
+ARG CODE_VERSION=latest
+FROM thekyria/thekali:${CODE_VERSION}
+
+ENTRYPOINT ["/home/kali/udp_client.py"]
+CMD ["-a", "172.17.0.2", "-p", "20212"]
+```
+
+Syntax help:
+- `FROM` basically denoting that this image is extending the one from thekyria/thekali before
+- `ENTRYPOINT` (exec form) is the command that is automatically executed when the corresponding image is run with a `docker run`. 
+- `CMD` (exec form) is the command that will execute right after the `ENTRYPOINT`. 
+In total the command that will be executed upon running the container is `ENTRYPOINT + CMD`.
+
+We can build the two images with:
+
+```bash
+docker build -f .\Dockerfile -t thekyria/thekali:latest .
+docker build -f .\Dockerfile.server -t thekyria/udp_server:latest .
+docker build -f .\Dockerfile.client -t thekyria/udp_client:latest .
+```
+
+Notice that before we build `Dockerfile.server` or `Dockerfile.client` we need to make sure that `thekyria/thekali` is up to date (first `build` command).
+
+We can run containers from the two images (on separate prompts).
+
+```bash
+docker run -i -t --name udp_server1 --network="bridge" --rm thekyria/udp_server:latest 20211
+```
+
+```bash
+docker run -i -t --name udp_client1 --network="bridge" --rm thekyria/udp_client:latest -a 172.17.0.2 -p 20211
+```
+
+Let's examine the first command:
+- A container named `udp_server1` is started from the image `thekyria/udp_client:latest`
+- The container is attached to docker network `bridge`.
+- An interactive shell is started to the container (`-i -t`).
+- The daemon is notified to delete the container after it exits (`-rm`).
+- Since the container is `run`, it starts by executing its `ENTRYPOINT`, i.e. `/home/kali/udp_server.py -p`, as seen in `Dockerfile.server`
+- The last part of the command `20211`, is the part where the `CMD` default of `["20212"]` (of `Dockerfile.server`) is overriden. The full command that will be executed in the container when it is run will be: `ENTRYPOINT + CMD` = `/home/kali/udp_server.py -p 20211`.
+
+Analogous explanations hold for the second command. `172.17.0.2` has been chosen to match the Docker `bridge` network IP address of container `udp_server1`. This is to initialize the sample UDP client application to target a valid IP (through the `-a` argparse argument of `udp_client.py`).
+
+We can see that the two containers can communicate to each other.
+
+_udp_client1_
+```bash
+udp_client[1024] :20212 -> 172.17.0.2:20212
+input message payload: asdf
+tx (172.17.0.2:20212): | 11 | asdf | 1361703869 |
+rx (172.17.0.2:20212): ACK | 11 | asdf | 1361703869 |
+```
+
+_udp_server1_
+```bash
+udp_server[1024] 0.0.0.0:20212
+rx (('172.17.0.3', 20212)): | 11 | asdf | 1361703869 | (raw: b'\x08\x0b\x12\x04asdf\x18\xbd\xe7\xa7\x89\x05')
+tx (('172.17.0.3', 20212)): ACK | 11 | asdf | 1361703869 |
+```
+
+## Overriding ENTRYPOINT and CMD
+
+The entrypoint can be overriden with `docker run --entrypoint XXX`. For example, we can always start a bash in our container with:
+
+```bash
+docker run -i -t --name udp_client1 --network="bridge" --rm --entrypoint /bin/bash thekyria/udp_client:latest
+```
+
+A more thorough description of `ENTRYPOINT` and `CMD` can be found [here](https://www.ctl.io/developers/blog/post/dockerfile-entrypoint-vs-cmd/).
