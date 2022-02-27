@@ -6,5 +6,5 @@ package thepb;
 message simple_message {
     optional int32 opcode = 1;
     optional string payload =2;
-    optional int32 crc32 =3;
+    optional uint32 crc32 =3;
 }
