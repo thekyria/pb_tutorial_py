@@ -1,0 +1,50 @@
+version: "3.9"
+
+networks:
+  udpexample:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.1.0.0/24
+          gateway: 10.1.0.1
+
+services:
+  base:
+    image: thekyria/thekali:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+  udp_server:
+    container_name: udp_server1
+    image: thekyria/udp_server:latest
+    depends_on:
+      - base
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    network_mode: bridge
+    tty: true
+    stdin_open: true
+    privileged: true
+    entrypoint: ["/home/kali/udp_server.py", "-p"]
+    command: ["20212"]
+    networks:
+      udpexample:
+        ipv4_address: 10.1.0.2
+  udp_client:
+    container_name: udp_client1
+    image: thekyria/udp_client:latest
+    depends_on:
+      - base
+    build:
+      context: .
+      dockerfile: Dockerfile.client
+    network_mode: bridge
+    tty: true
+    stdin_open: true
+    privileged: true
+    entrypoint: ["/home/kali/udp_client.py"]
+    command: ["-a", "10.1.0.2", "-p", "20212"]
+    networks:
+      udpexample:
+        ipv4_address: 10.1.0.3
