@@ -324,3 +324,121 @@ docker run -i -t --name udp_client1 --network="bridge" --rm --entrypoint /bin/ba
 ```
 
 A more thorough description of `ENTRYPOINT` and `CMD` can be found [here](https://www.ctl.io/developers/blog/post/dockerfile-entrypoint-vs-cmd/).
+
+# docker compose
+
+[Compose](https://docs.docker.com/compose/) is a tool for defining and running multi-container Docker applications, quite similar to what we want to do in this case. 
+
+The way services are defined is through a YAML file, the `docker-compose.yaml`.
+
+Syntax help:
+- `version` the version of the `docker-compose` `yaml` syntax.
+- `networks` defines [networks](https://docs.docker.com/compose/networking/) for our deployment. `driver: bridge` refers to the type of the underlying Docker network stack as explained in a [previous section](#networking). We will use `udpexample` to connect our services to.
+- `services` is the section where our containers are specified. In this example we have three: `base`, `udp_server` and `udp_client`. The reason `base` (dummy service) is needed is that the images of the latter two services (i.e. `thekyria/udp_server`, `thekyria/udp_client`) depend on image `thekyria/thekali`. This service-image dependency is declared with `depends_on:`.
+-  For each service:
+  - `image` specifies the image needed for the service
+  - `build` gives the instructions on how to build the image. When both `image` and `build` are specified, then Compose names the built image according to the `image` value. Substatements `context` and `dockerfile` are the equivalents of `docker build` command flags (e.g. `-f .\Dockerfile`).
+  - `networks` section points to the `udpexample` network defined before and assignes an ip for the container from the subnet defined in the network; this is analogous to the `docker run` command flag `--network="bridge"`. `network_mode` complements _how_ the container will be connected to the network.
+  - `tty` and `stdin_open` are the compose euivalents of `docker run` flags `-i -t`.
+  - `entrypoint` and `command` are related to the `Dockerfile` keywords `ENTRYPOINT` and `CMD` (or equivalently with the `docker run --entrypoint ENTRYPOINT myimage COMMAND` )
+
+Putting everything together we see that indeed the command executed under the hood for the `udp_server` is something like:
+
+```bash
+docker run -it --network=udpexample --entrypoint ""/home/kali/udp_server.py -p" thekyria/udp_server:latest 20212`
+```
+
+A complete reference on compose files can be [here](https://docs.docker.com/compose/compose-file/compose-file-v3/).
+
+
+## Environment variables
+
+The `.env` file is used to set [environment variables](https://docs.docker.com/compose/environment-variables/)
+
+```ini
+CLIENT_IP=10.1.0.3
+```
+
+which are then available to `docker-compose.yaml`,e.g.
+
+```yaml
+ipv4_address: ${CLIENT_IP}
+```
+
+The default filename that `docker compose` will look after for environment variables is `.env` but this can be overriden:
+
+```bash
+docker-compose --env-file ./path/to/.env.file up 
+```
+
+You can test that substitution of the environment variables happens correctly with:
+
+```bash
+docker-compose config
+```
+
+## Execute docker compose 
+
+While in the same folder as `docker-compose.yaml` execute:
+
+```bash
+docker-compose up -d
+```
+
+The `up` [command](https://docs.docker.com/compose/reference/up/) builds, (re)creates, starts, and attaches to containers for a service. Unless they are already running, this command also starts any linked services.
+
+You can only build (and not run them) the images defined in the compose file with `docker compose build` instead..
+
+The `-d` flag tells compose to start in a detached mode, again similar to the `docker run -d` flag. 
+
+You can verify that two containers started with either:
+
+```bash
+docker ps
+```
+
+```bash
+$ docker compose ps
+NAME                    COMMAND                  SERVICE             STATUS
+   PORTS
+pb_tutorial_py-base-1   "bash"                   base                exited (0)
+
+udp_client1             "/home/kali/udp_clie…"   udp_client          running
+
+udp_server1             "/home/kali/udp_serv…"   udp_server          running
+```
+
+We can see that `base` service was only used to build the image, and the corresponding `pb_tutorial_py-base-1` container is not running. We can attach to any of the other two containers and verify their behavior.
+
+```bash
+$ docker attach udp_client1
+
+tx (10.1.0.2:20212): | 11 |  | 0 |
+rx (10.1.0.2:20212): ACK | 11 |  | 0 |
+input message payload: asdf
+tx (10.1.0.2:20212): | 11 | asdf | 1361703869 |
+rx (10.1.0.2:20212): ACK | 11 | asdf | 1361703869 |
+input message payload:
+```
+
+The compose containers can be stopped with:
+
+```bash
+docker compose down
+```
+
+Cleanup corresponding images, containers and volumes can be done:
+
+```bash
+docker-compose rm -fsv
+```
+
+This is the equivalent of the `-rm` flag in the `docker run` command.
+
+
+## V1 vs V2 compose 
+
+- `docker-compose` is the V1 version of the command
+- `docker compose` is the [V2](https://docs.docker.com/compose/cli-command/) version of the command (starting Docker Desktop version  3.4.0 - check your version with `docker version`).
+
+In all commands in this example, either can be used, i.e. by using the dash "-" or not.
