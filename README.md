@@ -368,13 +368,13 @@ ipv4_address: ${CLIENT_IP}
 The default filename that `docker compose` will look after for environment variables is `.env` but this can be overriden:
 
 ```bash
-docker-compose --env-file ./path/to/.env.file up 
+docker compose --env-file ./path/to/.env.file up 
 ```
 
 You can test that substitution of the environment variables happens correctly with:
 
 ```bash
-docker-compose config
+docker compose config
 ```
 
 ## Execute docker compose 
@@ -382,7 +382,7 @@ docker-compose config
 While in the same folder as `docker-compose.yaml` execute:
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 The `up` [command](https://docs.docker.com/compose/reference/up/) builds, (re)creates, starts, and attaches to containers for a service. Unless they are already running, this command also starts any linked services.
@@ -430,7 +430,7 @@ docker compose down
 Cleanup corresponding images, containers and volumes can be done:
 
 ```bash
-docker-compose rm -fsv
+docker compose rm -fsv
 ```
 
 This is the equivalent of the `-rm` flag in the `docker run` command.

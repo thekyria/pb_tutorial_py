@@ -49,3 +49,8 @@ services:
     networks:
       udpexample:
         ipv4_address: ${CLIENT_IP}
+
+# Run with
+#    docker compose up -d
+# Cleanup corresponding images, containers and volumes
+#    docker compose rm -fsv
