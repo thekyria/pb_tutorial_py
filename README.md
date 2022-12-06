@@ -1,3 +1,6 @@
+# Prerequisites
+
+- Install [Docker](https://docs.docker.com/get-docker/) for your platform.
 
 # Create a Dockerfile 
 
@@ -27,6 +30,9 @@ Syntax help for docker build:
 - `-t` specifies a repository (`thekyria/thekali`) and a version (`latest`) to tag the image with.
 - `.` is the context of the `docker build` command.
 
+If you want to not consider cached layers when building you can include the flag `--no-cache`. 
+If you want to always attempt to pull a latest version of the underlying (i.e. `FROM`) image when building you can include the flag `--pull`.
+
 If everything is successfull, you should be able to see your new image.
 
 ```bat
@@ -44,7 +50,7 @@ It is a good practice to include a `.dockerignore` file in the directory of your
 You can start the container with:
 
 ```bash
-docker run -i -t --name kali1 thekyria/thekali:latest /bin/bash
+docker run -i -t --name kali1 thekyria/thekali:latest bash
 ```
 
 Explanation of the docker run command:
@@ -52,7 +58,7 @@ Explanation of the docker run command:
 - `-t` flag gives you TTY to the docker container as if you were inside the shell of the container. The combination of `i` and `t` gives access the the prompt of the container.
 - `--name kali1` gives the name `kali1` to the container instance. This can be seen in `docker ps`. If the `--name` is not specified, a random name is generated upon `docker run` execution, e.g. `lucid_dewdney`.
 - `thekyria/thekali:latest` specify the image to run
-- `/bin/bash` specifies the command to run in the container
+- `bash` specifies the command to run in the container
 
 For a complete reference on the run command see here: 
 https://docs.docker.com/engine/reference/run/
@@ -77,10 +83,10 @@ b254622c25d6   thekyria/thekali:latest   "/bin/bash"   3 seconds ago   Up 4 seco
 A container can be started in detached mode. 
 
 ```bash
-docker run -it -d thekyria/thekali:latest /bin/bash
+docker run -it -d thekyria/thekali:latest bash
 ```
 
-The above will start the container, launch the `/bin/bash` command in the container, and return to the prompt in the host. You can verify that an image is running with the `docker ps` command.
+The above will start the container, launch the `bash` command in the container, and return to the prompt in the host. You can verify that an image is running with the `docker ps` command.
 
 The `-it` flag is a combination of `-i`, `-t`. It is still needed 
 
@@ -97,8 +103,8 @@ Where `ff506a507bbd`  is the `CONTAINER ID` as shown by the `docker ps` command.
 The `CONTAINER_ID` can be used to start and stop containers.
 
 ```bash
-docker run -i -t -d thekyria/thekali:latest /bin/bash
-docker run -i -t -d thekyria/thekali:latest /bin/bash
+docker run -i -t -d thekyria/thekali:latest bash
+docker run -i -t -d thekyria/thekali:latest bash
 docker ps
 ```
 
@@ -141,8 +147,8 @@ docker attach f6872f405f0b
 Start two containers.
 
 ```bash
-docker run -i -t -d --name kali1 --network="bridge" --rm thekyria/thekali:latest /bin/bash
-docker run -i -t -d --name kali2 --network="bridge" --rm thekyria/thekali:latest /bin/bash
+docker run -i -t -d --name kali1 --network="bridge" --rm thekyria/thekali:latest bash
+docker run -i -t -d --name kali2 --network="bridge" --rm thekyria/thekali:latest bash
 ```
 
 The `--network="bridge"` flag creates a network stack on the default Docker bridge (this is the default behavior). Alternative options (e.g. "none", "host", etc.) are available [here](https://docs.docker.com/engine/reference/run/#network-settings).
