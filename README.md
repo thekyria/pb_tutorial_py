@@ -7,8 +7,8 @@ A Dockerfile is a text document that contains all the commands a user could call
 -  The `# syntax` directive defines the location of the Dockerfile syntax that is used to build the `Dockerfile`.
 -  `ARG` sets up a variable to be passed at build-time to the builder. This can be later be used like `${CODE_VERSION}` in the `FROM` line.
 - `FROM` this is the basic container that your container is going to be based on. [Kali Linux](https://www.kali.org/blog/official-kali-linux-docker-images/) is used here as a base image just as an example.
-- `LABEL` key-value pairs of metadata for your container. Can later be inspected with `docker image inspect --format='' myimage`.
-- `SHELL` defines the default shell for the container. In linux by default it is `SHELL ["/bin/sh", "-c"]` (included in the example Dockerfile above for educational purposes).
+- `LABEL` key-value pairs of metadata for your container. This can later be inspected with `docker image inspect --format='' myimage`.
+- `SHELL` defines the default shell for the container. In Linux by default it is `SHELL ["/bin/sh", "-c"]` (included in the example `Dockerfile` above for educational purposes).
 -  `RUN` will execute commands in a new layer on top of the current image and commit the results. The result will be used for any next step in the Dockerfile.
 -  `WORKDIR` sets the working directory fory any `RUN`, `CMD`, `ENTRYPOINT`, `COPY` and `ADD` instructions that follow it.
 
@@ -23,14 +23,14 @@ docker build -f .\Dockerfile -t thekyria/thekali:latest .
 ```
 
 Syntax help for docker build:
-- `-f` specifies the Dockerfile location. If omitted the default location it `.\Dockerfile`
--  `-t` specifies a repository (`thekyria/thekali`) and a version (`latest`) to tag the image with
+- `-f` specifies the Dockerfile location. If omitted, the default location is `.\Dockerfile`.
+- `-t` specifies a repository (`thekyria/thekali`) and a version (`latest`) to tag the image with.
 - `.` is the context of the `docker build` command.
 
 If everything is successfull, you should be able to see your new image.
 
-```bash
-PS C:\Users\theky\work\development\docker_udp\thekali> docker images
+```bat
+PS > docker images
 REPOSITORY                    TAG              IMAGE ID       CREATED          SIZE
 thekyria/thekali              latest           8b77b2f4032d   13 minutes ago   265MB
 ```
@@ -67,7 +67,7 @@ This will bring you in the bash of the container.
 From another cmd on the host, you can verify that the container is running with:
 
 ```bash
-PS C:\Users\theky> docker ps
+PS > docker ps
 CONTAINER ID   IMAGE                     COMMAND       CREATED         STATUS         PORTS     NAMES
 b254622c25d6   thekyria/thekali:latest   "/bin/bash"   3 seconds ago   Up 4 seconds             xenodochial_newton
 ```
@@ -129,7 +129,7 @@ docker attach 3f8447557f1b
 And from another bash: 
 
 ```bash
-docker attachf6872f405f0b
+docker attach f6872f405f0b
 ```
 
 
@@ -161,14 +161,14 @@ docker network inspect bridge
 
 Attach to the two containers from different prompts on the host. Check the IP addresses with `ip a`. On one of the two start `tcpdump` and on the other ping the first  with `ping <ip-address>`.
 
-For the above to work, make sure `ping` and `tcpdump` are installed on the image that you use.
+For the above to work, make sure `ping` and `tcpdump` are installed on the image(s) that you use.
 
 A similar walkthrough can be found under:
 https://docs.docker.com/network/network-tutorial-standalone/
 
 ## Ping from the host to a container
 
-In Windows there is not `docker0` bridge interface and therefore linux containers cannot be pinged. See also:
+In Windows there is not a `docker0` bridge interface and therefore linux containers cannot be pinged. See also:
 https://docs.docker.com/desktop/windows/networking/
 
 
@@ -222,8 +222,8 @@ package thepb;
 
 message simple_message {
     optional int32 opcode = 1;
-    optional string payload =2;
-    optional int32 crc32 =3;
+    optional string payload = 2;
+    optional int32 crc32 = 3;
 }
 ```
 
@@ -263,7 +263,7 @@ CMD ["-a", "172.17.0.2", "-p", "20212"]
 ```
 
 Syntax help:
-- `FROM` basically denoting that this image is extending the one from thekyria/thekali before
+- `FROM` basically denoting that this image is extending the one from `thekyria/thekali` before
 - `ENTRYPOINT` (exec form) is the command that is automatically executed when the corresponding image is run with a `docker run`. 
 - `CMD` (exec form) is the command that will execute right after the `ENTRYPOINT`. 
 In total the command that will be executed upon running the container is `ENTRYPOINT + CMD`.
@@ -332,20 +332,20 @@ A more thorough description of `ENTRYPOINT` and `CMD` can be found [here](https:
 The way services are defined is through a YAML file, the `docker-compose.yaml`.
 
 Syntax help:
-- `version` the version of the `docker-compose` `yaml` syntax.
+- `version` is the version of the `docker-compose` `yaml` syntax.
 - `networks` defines [networks](https://docs.docker.com/compose/networking/) for our deployment. `driver: bridge` refers to the type of the underlying Docker network stack as explained in a [previous section](#networking). We will use `udpexample` to connect our services to.
 - `services` is the section where our containers are specified. In this example we have three: `base`, `udp_server` and `udp_client`. The reason `base` (dummy service) is needed is that the images of the latter two services (i.e. `thekyria/udp_server`, `thekyria/udp_client`) depend on image `thekyria/thekali`. This service-image dependency is declared with `depends_on:`.
 -  For each service:
-  - `image` specifies the image needed for the service
-  - `build` gives the instructions on how to build the image. When both `image` and `build` are specified, then Compose names the built image according to the `image` value. Substatements `context` and `dockerfile` are the equivalents of `docker build` command flags (e.g. `-f .\Dockerfile`).
+  - `image` specifies the image needed for the service.
+  - `build` gives the instructions on how to build the image. When both `image` and `build` are specified, then compose names the built image according to the `image` value. Substatements `context` and `dockerfile` are the equivalents of `docker build` command flags (e.g. `-f .\Dockerfile`).
   - `networks` section points to the `udpexample` network defined before and assignes an ip for the container from the subnet defined in the network; this is analogous to the `docker run` command flag `--network="bridge"`. `network_mode` complements _how_ the container will be connected to the network.
-  - `tty` and `stdin_open` are the compose euivalents of `docker run` flags `-i -t`.
+  - `tty` and `stdin_open` are the compose equivalents of `docker run` flags `-i -t`.
   - `entrypoint` and `command` are related to the `Dockerfile` keywords `ENTRYPOINT` and `CMD` (or equivalently with the `docker run --entrypoint ENTRYPOINT myimage COMMAND` )
 
 Putting everything together we see that indeed the command executed under the hood for the `udp_server` is something like:
 
 ```bash
-docker run -it --network=udpexample --entrypoint ""/home/kali/udp_server.py -p" thekyria/udp_server:latest 20212`
+docker run -it --network=udpexample --entrypoint "/home/kali/udp_server.py -p" thekyria/udp_server:latest 20212
 ```
 
 A complete reference on compose files can be [here](https://docs.docker.com/compose/compose-file/compose-file-v3/).
@@ -365,7 +365,7 @@ which are then available to `docker-compose.yaml`,e.g.
 ipv4_address: ${CLIENT_IP}
 ```
 
-The default filename that `docker compose` will look after for environment variables is `.env` but this can be overriden:
+The default filename that `docker compose` will search for environment variables is `.env` but this can be overriden:
 
 ```bash
 docker compose --env-file ./path/to/.env.file up 
@@ -379,7 +379,7 @@ docker compose config
 
 ## Execute docker compose 
 
-While in the same folder as `docker-compose.yaml` execute:
+While in the same folder as `docker-compose.yaml`, execute:
 
 ```bash
 docker compose up -d
