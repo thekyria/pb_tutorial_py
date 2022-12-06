@@ -12,7 +12,7 @@ SHELL ["/bin/sh", "-c"]
 RUN apt -y update && \
     apt -y upgrade && \
     apt install --yes --no-install-recommends \
-    procps dos2unix nano bsdmainutils \
+    procps dos2unix nano less bsdmainutils \
     iproute2 iputils-ping tcpdump net-tools \
     python3 python3-pip python-is-python3 \
     protobuf-compiler && \
@@ -29,7 +29,7 @@ RUN dos2unix ./* simple_message/* pb_tutorial_py_lib/*
 
 RUN python -m pip install --upgrade -r requirements.txt
 
-RUN protoc --proto_path=. --python_out=simple_message/ simple_message/simple_message.proto
+RUN protoc --proto_path=. --python_out=. simple_message/simple_message.proto
 
 # Build with:
 #  docker build -f .\Dockerfile -t thekyria/thekali:latest .
