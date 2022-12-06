@@ -22,11 +22,13 @@ For a complete reference of Dockerfiles see here: https://docs.docker.com/engine
 To create a docker image you need to build your `Dockerfile`. This is done by the Docker daemon, not by the CLI. The CLI passes the build context to the daemon with the following command.
 
 ```bash
-docker build -f .\Dockerfile -t thekyria/thekali:latest .
+docker build -f ./Dockerfile -t thekyria/thekali:latest .
 ```
 
+WARNING: In the above, `./Dockerfile` asusmes Linux path naming.
+
 Syntax help for docker build:
-- `-f` specifies the Dockerfile location. If omitted, the default location is `.\Dockerfile`.
+- `-f` specifies the Dockerfile location. If omitted, the default location is `./Dockerfile`.
 - `-t` specifies a repository (`thekyria/thekali`) and a version (`latest`) to tag the image with.
 - `.` is the context of the `docker build` command.
 
@@ -236,10 +238,10 @@ message simple_message {
 The corresponding `.py` file can be created by parsing the `.proto` definition with `protoc` (as seen in `Dockerfile:32`):
 
 ```bash
-protoc --proto_path=. --python_out=simple_message/ simple_message/simple_message.proto
+protoc --proto_path=. --python_out=. simple_message/simple_message.proto
 ```
 
-The output `simple_message_pb2.py` is imported and used where needed. Example excerpt from `udc_client.py`.
+The output `simple_message_pb2.py` is imported and used where needed. Example excerpt from `udp_client.py`.
 
 ```python
 ...
@@ -253,6 +255,8 @@ message_tx.crc32 = crc32.calculate_crc(payload)
 rx_tx_socket.sendto(message_tx.SerializeToString(), (_target_ip, _target_port))
 ...
 ```
+
+## New dockerfiles for a server and a client
 
 Two new `Dockerfiles` are generated:
 - `Dockerfile.server` corresponding to the "server" application of the example, and
@@ -277,10 +281,12 @@ In total the command that will be executed upon running the container is `ENTRYP
 We can build the two images with:
 
 ```bash
-docker build -f .\Dockerfile -t thekyria/thekali:latest .
-docker build -f .\Dockerfile.server -t thekyria/udp_server:latest .
-docker build -f .\Dockerfile.client -t thekyria/udp_client:latest .
+docker build -f ./Dockerfile -t thekyria/thekali:latest .
+docker build -f ./Dockerfile.server -t thekyria/udp_server:latest .
+docker build -f ./Dockerfile.client -t thekyria/udp_client:latest .
 ```
+
+WARNING: In the above, `./Dockerfile` asusmes Linux path naming.
 
 Notice that before we build `Dockerfile.server` or `Dockerfile.client` we need to make sure that `thekyria/thekali` is up to date (first `build` command).
 
@@ -326,7 +332,7 @@ tx (('172.17.0.3', 20212)): ACK | 11 | asdf | 1361703869 |
 The entrypoint can be overriden with `docker run --entrypoint XXX`. For example, we can always start a bash in our container with:
 
 ```bash
-docker run -i -t --name udp_client1 --network="bridge" --rm --entrypoint /bin/bash thekyria/udp_client:latest
+docker run -i -t --name udp_client1 --network="bridge" --rm --entrypoint bash thekyria/udp_client:latest
 ```
 
 A more thorough description of `ENTRYPOINT` and `CMD` can be found [here](https://www.ctl.io/developers/blog/post/dockerfile-entrypoint-vs-cmd/).
@@ -343,7 +349,7 @@ Syntax help:
 - `services` is the section where our containers are specified. In this example we have three: `base`, `udp_server` and `udp_client`. The reason `base` (dummy service) is needed is that the images of the latter two services (i.e. `thekyria/udp_server`, `thekyria/udp_client`) depend on image `thekyria/thekali`. This service-image dependency is declared with `depends_on:`.
 -  For each service:
   - `image` specifies the image needed for the service.
-  - `build` gives the instructions on how to build the image. When both `image` and `build` are specified, then compose names the built image according to the `image` value. Substatements `context` and `dockerfile` are the equivalents of `docker build` command flags (e.g. `-f .\Dockerfile`).
+  - `build` gives the instructions on how to build the image. When both `image` and `build` are specified, then compose names the built image according to the `image` value. Substatements `context` and `dockerfile` are the equivalents of `docker build` command flags (e.g. `-f ./Dockerfile`).
   - `networks` section points to the `udpexample` network defined before and assignes an ip for the container from the subnet defined in the network; this is analogous to the `docker run` command flag `--network="bridge"`. `network_mode` complements _how_ the container will be connected to the network.
   - `tty` and `stdin_open` are the compose equivalents of `docker run` flags `-i -t`.
   - `entrypoint` and `command` are related to the `Dockerfile` keywords `ENTRYPOINT` and `CMD` (or equivalently with the `docker run --entrypoint ENTRYPOINT myimage COMMAND` )
