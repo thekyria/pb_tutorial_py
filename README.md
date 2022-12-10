@@ -213,6 +213,63 @@ A deeper cleanup is possible with:
 docker image prune -a
 ```
 
+
+# Protocol buffers
+
+Protocol buffers are Google's language-neutral, platform-neutral, extensible mechanism for serializing structured data – think XML, but smaller, faster, and simpler. You define how you want your data to be structured once, then you can use special generated source code to easily write and read your structured data to and from a variety of data streams and using a variety of languages.
+
+All pages under this one are worth it.
+https://developers.google.com/protocol-buffers/docs/overview
+Especially interesting is the Encoding page.
+
+## C++ Tutorial
+
+From here: https://developers.google.com/protocol-buffers/docs/cpptutorial
+
+Create a `.proto` file.
+
+```protoc
+syntax = "proto2";
+
+package tutorial;
+
+message Person {
+  optional string name = 1;
+  optional int32 id = 2;
+  optional string email = 3;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    optional string number = 1;
+    optional PhoneType type = 2 [default = HOME];
+  }
+
+  repeated PhoneNumber phones = 4;
+}
+
+message AddressBook {
+  repeated Person people = 1;
+}
+```
+
+
+## Manually generating .c and .h files
+
+Run the `protoc` compiler to your `.proto` file.
+
+```powershell
+protoc.exe --proto_path=. --cpp_out=. .\addressbook.proto
+```
+
+You should now have a `.pb.h` and a `.pb.c`  in your output directory.
+
+
+
 # Applications in containers
 
 An application can copied over to a container through `Dockerfile` `COPY` commands and can be run from there via a combination of `ENTRYPOINT` and `CMD` commands.
